@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fft-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: fft
+  ports:
+  - port: 80
+    targetPort: 80
