@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+  namespace: emi
+spec:
+  serviceName: mongo             # the headless Service: pods are mongo-0.mongo, mongo-1.mongo, mongo-2.mongo
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:7.0
+        # --wiredTigerCacheSizeGB keeps the cache inside the memory limit (default would be 50% of host RAM)
+        args: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
+        ports:
+        - containerPort: 27017
+          name: mongo
+        resources:
+          requests: {cpu: 100m, memory: 256Mi}
+          limits: {memory: 1Gi}
+        volumeMounts:
+        - name: data
+          mountPath: /data/db
+  volumeClaimTemplates:          # one 1Gi disk per pod: data-mongo-0, data-mongo-1, data-mongo-2
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 1Gi

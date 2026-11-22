@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emi-web
+  namespace: emi
+  annotations:
+    kubernetes.io/change-cause: "initial deploy: emi-web:1.0"   # shown by kubectl rollout history
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: emi-web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0          # never remove an old pod before a new one is Ready
+  template:
+    metadata:
+      labels:
+        app: emi-web
+    spec:
+      securityContext:
+        runAsNonRoot: true       # the image runs as UID 10001
+      containers:
+      - name: web
+        image: emi-web:1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: MONGO_URL
+          valueFrom:
+            configMapKeyRef:
+              name: emi-config
+              key: MONGO_URL
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        resources:
+          requests: {cpu: 100m, memory: 128Mi}
+          limits: {cpu: 250m, memory: 256Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+        readinessProbe:
+          httpGet: {path: /health, port: 5000}
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        livenessProbe:
+          httpGet: {path: /health, port: 5000}
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 6    # restart only after 60 s without MongoDB, not during an election
+        lifecycle:
+          preStop:               # let the Ingress/Service stop sending traffic before the pod shuts down
+            exec:
+              command: ["sleep", "5"]

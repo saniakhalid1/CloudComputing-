@@ -1,0 +1,14 @@
+# Headless Service: gives each MongoDB pod a fixed DNS name (mongo-0.mongo, mongo-1.mongo, ...)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: emi
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true   # names exist even before the replica set is set up
+  selector:
+    app: mongo
+  ports:
+  - name: mongo
+    port: 27017

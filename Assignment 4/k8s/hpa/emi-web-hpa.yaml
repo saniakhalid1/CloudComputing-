@@ -1,0 +1,25 @@
+# Applied only in Milestone 04 (kubectl apply -f k8s/hpa/), so it does not undo the manual scaling
+# of Milestones 03 and 04 (kubectl scale).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: emi-web
+  namespace: emi
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: emi-web
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50     # % of the 100m CPU request, averaged over the pods
+  behavior:
+    scaleDown:
+      # default is 300 s; with 60 s the HPA removes pods inside the 3-minute cool-down of the test
+      stabilizationWindowSeconds: 60
