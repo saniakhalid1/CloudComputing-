@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadratic Equation Solver</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="text-center">Quadratic Equation Solver</h2>
+    <form id="solverForm">
+        <div class="form-group">
+            <label for="a">Coefficient a:</label>
+            <input type="number" step="any" class="form-control" id="a" placeholder="Leave empty for random">
+        </div>
+        <div class="form-group">
+            <label for="b">Coefficient b:</label>
+            <input type="number" step="any" class="form-control" id="b" placeholder="Leave empty for random">
+        </div>
+        <div class="form-group">
+            <label for="c">Coefficient c:</label>
+            <input type="number" step="any" class="form-control" id="c" placeholder="Leave empty for random">
+        </div>
+        <button type="submit" class="btn btn-primary">Solve</button>
+    </form>
+
+    <div class="mt-4">
+        <h4>Solution:</h4>
+        <p id="result"></p>
+    </div>
+</div>
+
+<script>
+$(document).ready(function () {
+    $("#solverForm").submit(function (event) {
+        event.preventDefault();
+
+        var params = {};
+        if ($("#a").val() !== "") params.a = $("#a").val();
+        if ($("#b").val() !== "") params.b = $("#b").val();
+        if ($("#c").val() !== "") params.c = $("#c").val();
+
+        $.ajax({
+            url: "/solve",
+            type: "GET",
+            data: params,
+            cache: false,
+            success: function (response) {
+                var roots = Array.isArray(response.roots) ? response.roots.join(", ") : response.roots;
+                $("#result").html(
+                    "<strong>Equation:</strong> " + response.a + "x² + " + response.b + "x + " + response.c + " = 0<br>" +
+                    "<strong>Roots:</strong> " + roots + "<br>" +
+                    "<strong>Hostname:</strong> " + response.hostname + "<br>" +
+                    "<strong>Host IP Address:</strong> " + response.server_ip
+                );
+            },
+            error: function () {
+                $("#result").html("<span class='text-danger'>Error: could not reach the server.</span>");
+            }
+        });
+    });
+});
+</script>
+</body>
+</html>
